@@ -1,30 +1,114 @@
 ---
-title: "Practical Machine Learning Course Project"
+title: 'Coursera Data Science : Machine Learning Project'
 author: "Coral Peck"
-date: "17 August 2017"
-output: html_document
+date: "1 August 2017"
+output:
+  html_document: default
 ---
 
 ```{r setup, include=FALSE}
 knitr::opts_chunk$set(echo = TRUE)
 ```
 
-## R Markdown
+## Summary
 
-This is an R Markdown document. Markdown is a simple formatting syntax for authoring HTML, PDF, and MS Word documents. For more details on using R Markdown see <http://rmarkdown.rstudio.com>.
+The goal of this project is to use data from accelerometers on the belt, forearm, arm, and dumbell of 6 participants, to  predict the manner in which they did the exercise. They were asked to perform barbell lifts correctly and incorrectly in 5 different ways. More information is available from the website here: http://groupware.les.inf.puc-rio.br/har (see the section on the Weight Lifting Exercise Dataset).
 
-When you click the **Knit** button a document will be generated that includes both content as well as the output of any embedded R code chunks within the document. You can embed an R code chunk like this:
+## Sypnosis
 
-```{r cars}
-summary(cars)
+We used Recursive Feature Elimination (RFE) in caret to identify 17 features, which we later fed into a Random Forest model to predict which exercise was done.  The final model has approximately 99% accuracy and the details of the modelling follows below.
+
+## Exploratory Analysis
+Here, we find that there are alot of missing datapoints (NA and #!NA/0!).  We do not think it is appriopriate to impute values for missing data where more than 95% are missing.  We removed these predictors (with >95% missing data), as well as irrelevant predictors which are not usable for future prediction purposes (index, user_name, raw_timestamp_part_1, raw_timestamp_part_2, cvtd_timestamp, new_window, num_window).  We are left with 52 potential predictors, and we saw that the data is distributed among the 5 exercises for modelling.
+
+```{r ExpAnalysis, cache = TRUE}
+data<-read.csv("pml-training.csv",na.strings=c("NA","#DIV/0!"))
+NArate <- apply(data, 2, function(x) sum(is.na(x)))/nrow(data)
+data <- data[!(NArate>0.95)]
+str(data)
+table(data$classe)
 ```
 
-## Including Plots
+## Feature Selection
 
-You can also embed plots, for example:
+We now do feature selection to identify and remove redundant attributes from 52 predictors.  We do this by using the Recursive Feature Elimination (RFE) in caret to identify the optimal number of features.  
 
-```{r pressure, echo=FALSE}
-plot(pressure)
+We hit 2 issues here :
+
+*1) Long computational times of a few hours with repeated k-fold cross validation and multiple subsets*
+
+To handle long computational times, We chose to use simple k-fold cross validation (10 fold) instead of repeated k-fold cross validation to assess how many features would be optimal for model training.  
+
+To check that the model accuracy will not be too adversely affected, We split the training data into 2.  70% of the training data will be used for predictor selection and model fitting; remaining 30% will be used for performance evaluation.  
+
+*2) The model selected by RFE is based on maximising "Accuracy". However the differences in accuracy between 17 and 40 features (model with highest accuracy) is less than 1 percent.*
+
+Given the small difference in model accuracy, it is likely that the differences are due to randomness in the data and using 40 parameters increases the model complexity without giving real benefits in accuracy.  Hence we decided to use 17 features model for model training and validation instead of 40 features.
+
+
+```{r feature, cache = TRUE, error= FALSE, warning=FALSE, message=FALSE}
+#loading libraries
+library(caret)
+library(mlbench)
+library(Hmisc)
+library(randomForest)
+library(parallel)
+library(doParallel)
+
+#Setup parallel processing; convention to leave 1 core for OS
+cluster <- makeCluster(detectCores() - 1) 
+registerDoParallel(cluster)
+
+# Splitting the data into training and validating sets
+set.seed(168)
+index <- createDataPartition(y=data$classe,p=.70,list=F)
+training <- data[index,]
+validating <- data[-index,]
+xrfe<-training[,8:59]
+yrfe<-training[,60]
+
+#Setup parameters for RFE process
+rfectrl <- rfeControl(functions = rfFuncs,
+                   method = "cv",
+                   number = 5,
+                   verbose = FALSE,
+                   returnResamp = "all",
+                   allowParallel = TRUE)
+subsets <- c(10, 15, 16, 17, 18, 19, 20,30,40)
+set.seed(10)
+rfeProfile <- rfe(xrfe, yrfe, sizes = subsets, rfeControl = rfectrl)
+rfeProfile
+
+# plot of how model accuracy changes with number of features used in model
+trellis.par.set(caretTheme())
+plot1 <- plot(rfeProfile, type = c("g", "o"))
+print(plot1)
+
+# Update the model to use 17 features
+modeltrained<-update(rfeProfile,x=xrfe,y=yrfe,size=17)
+
+# Training Accuracy 
+modeltrained$fit
 ```
 
-Note that the `echo = FALSE` parameter was added to the code chunk to prevent printing of the R code that generated the plot.
+
+From the plot above, we see that the model with best accuracy chosen by RFE is one with 40 features at >99.  However, we also see that we can reach 99% accuracy with just 17 features.  We decided to proceed with just 17 features so as to NOT complicate the model without commensurate benefits in model accuracy. 
+
+Since we did not use the "optimal" model computed by RFE in the first run, we needed to update RFE to run again with 17 features for prediction purposes.  We saw that the model accuracy using training data is still approx 99% after updating the model.
+
+## Model Validation
+Here we are using the 30% training data set to assess model accuracy.  We see that the model accuracy remains approx 99%.
+
+```{r validation, cache = TRUE, error= FALSE, warning=FALSE}
+
+# Preparing the data for validation so that it has the same number of features as the model used for training
+xvalidate<-validating[,predictors(modeltrained$fit)]
+yvalidate<-validating[,"classe"]
+
+# Predicting Classe using modeltrained and assessing model accuracy
+predictvalidate<-predict(modeltrained$fit,newdata=xvalidate)
+confusionMatrix(predictvalidate,yvalidate)
+stopCluster(cluster)
+registerDoSEQ()
+```
+
