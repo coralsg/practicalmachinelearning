@@ -41,9 +41,9 @@ To handle long computational times, We chose to use simple k-fold cross validati
 
 To check that the model accuracy will not be too adversely affected, We split the training data into 2.  70% of the training data will be used for predictor selection and model fitting; remaining 30% will be used for performance evaluation.  
 
-*2) The model selected by RFE is based on maximising "Accuracy". However the differences in accuracy between 17 and 40 features (model with highest accuracy) is less than 1 percent.*
+*2) The model selected by RFE is based on maximising "Accuracy". However the differences in accuracy between 17 and 52 features (model with highest accuracy) is less than 1 percent.*
 
-Given the small difference in model accuracy, it is likely that the differences are due to randomness in the data and using 40 parameters increases the model complexity without giving real benefits in accuracy.  Hence we decided to use 17 features model for model training and validation instead of 40 features.
+Given the small difference in model accuracy, it is likely that the differences are due to randomness in the data and using all 52 parameters increases the model complexity without giving real benefits in accuracy.  Hence we decided to use 17 features model for model training and validation instead of that chosen by inital model.
 
 
 ```{r feature, cache = TRUE, error= FALSE, warning=FALSE, message=FALSE}
@@ -92,9 +92,9 @@ modeltrained$fit
 ```
 
 
-From the plot above, we see that the model with best accuracy chosen by RFE is one with 40 features at >99.  However, we also see that we can reach 99% accuracy with just 17 features.  We decided to proceed with just 17 features so as to NOT complicate the model without commensurate benefits in model accuracy. 
+From the plot above, we see that the model with best accuracy chosen by RFE is one with 52 features at >99.3%.  However, we also see that we can reach 99% accuracy with just 17 features.  We decided to proceed with just 17 features so as to NOT complicate the model without commensurate benefits in model accuracy. 
 
-Since we did not use the "optimal" model computed by RFE in the first run, we needed to update RFE to run again with 17 features for prediction purposes.  We saw that the model accuracy using training data is still approx 99% after updating the model.
+Since we did not use the "optimal" model computed by RFE in the first run, we needed to update RFE to run again with 17 features for prediction purposes.  We saw that the model accuracy using training data is still approx 99% after updating the model.  OOB estimate of error rate: 0.81%
 
 ## Model Validation
 Here we are using the 30% training data set to assess model accuracy.  We see that the model accuracy remains approx 99%.

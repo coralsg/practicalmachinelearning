@@ -211,8 +211,8 @@ str(data)</code></pre>
 <p><em>1) Long computational times of a few hours with repeated k-fold cross validation and multiple subsets</em></p>
 <p>To handle long computational times, We chose to use simple k-fold cross validation (10 fold) instead of repeated k-fold cross validation to assess how many features would be optimal for model training.</p>
 <p>To check that the model accuracy will not be too adversely affected, We split the training data into 2. 70% of the training data will be used for predictor selection and model fitting; remaining 30% will be used for performance evaluation.</p>
-<p><em>2) The model selected by RFE is based on maximising “Accuracy”. However the differences in accuracy between 17 and 40 features (model with highest accuracy) is less than 1 percent.</em></p>
-<p>Given the small difference in model accuracy, it is likely that the differences are due to randomness in the data and using 40 parameters increases the model complexity without giving real benefits in accuracy. Hence we decided to use 17 features model for model training and validation instead of 40 features.</p>
+<p><em>2) The model selected by RFE is based on maximising “Accuracy”. However the differences in accuracy between 17 and 52 features (model with highest accuracy) is less than 1 percent.</em></p>
+<p>Given the small difference in model accuracy, it is likely that the differences are due to randomness in the data and using all 52 parameters increases the model complexity without giving real benefits in accuracy. Hence we decided to use 17 features model for model training and validation instead of that chosen by inital model.</p>
 <pre class="r"><code>#loading libraries
 library(caret)
 library(mlbench)
@@ -290,8 +290,8 @@ modeltrained$fit</code></pre>
 ## C    0   17 2368   11    0 0.011686144
 ## D    0    0   25 2224    3 0.012433393
 ## E    0    0    3    9 2513 0.004752475</code></pre>
-<p>From the plot above, we see that the model with best accuracy chosen by RFE is one with 40 features at &gt;99. However, we also see that we can reach 99% accuracy with just 17 features. We decided to proceed with just 17 features so as to NOT complicate the model without commensurate benefits in model accuracy.</p>
-<p>Since we did not use the “optimal” model computed by RFE in the first run, we needed to update RFE to run again with 17 features for prediction purposes. We saw that the model accuracy using training data is still approx 99% after updating the model.</p>
+<p>From the plot above, we see that the model with best accuracy chosen by RFE is one with 52 features at &gt;99.3%. However, we also see that we can reach 99% accuracy with just 17 features. We decided to proceed with just 17 features so as to NOT complicate the model without commensurate benefits in model accuracy.</p>
+<p>Since we did not use the “optimal” model computed by RFE in the first run, we needed to update RFE to run again with 17 features for prediction purposes. We saw that the model accuracy using training data is still approx 99% after updating the model. OOB estimate of error rate: 0.81%</p>
 </div>
 <div id="model-validation" class="section level2">
 <h2>Model Validation</h2>
