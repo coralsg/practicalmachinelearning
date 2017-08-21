@@ -1,0 +1,23 @@
+---
+title: "Leaflet Mini Project"
+author: "Coral Peck"
+date: "21 August 2017"
+output: html_document
+---
+  
+  ```{r setup, include=FALSE}
+knitr::opts_chunk$set(echo = TRUE)
+```
+
+## Leaflet example, 21 Aug 2017
+
+
+```{r leaflet, echo=FALSE}
+library(leaflet)
+
+m <- leaflet() %>%
+  addTiles() %>%  # Add default OpenStreetMap map tiles
+  setView(lng=103.8198, lat=1.3521, zoom = 09) %>%
+  addMarkers(lng=103.8198, lat=1.3521, popup="This country is aka Little Red Dot")
+m
+```
